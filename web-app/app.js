@@ -118,12 +118,13 @@ function calculate() {
     const days = Number(y.allowedDays);
     if (!num || !days) continue;
     map[num] = {
-      yearNum:    num,
+      yearNum:     num,
       allowedDays: days,
-      cutoffDay:  y.cutoffDay   || 31,
+      hasCutoff:   !!(y.cutoffDay && y.cutoffMonth),
+      cutoffDay:   y.cutoffDay   || 31,
       cutoffMonth: y.cutoffMonth || 12,
-      usedDays:   0,
-      logs:       [],
+      usedDays:    0,
+      logs:        [],
     };
   }
 
@@ -142,10 +143,11 @@ function calculate() {
     if (!year) continue;
     const prevYear = map[vacYear - 1] || null;
 
-    // cutoff is constructed from the CURRENT vacation's year (same as Python)
-    const cutoff = new Date(vacYear, year.cutoffMonth - 1, year.cutoffDay, 0, 0, 0, 0);
+    const cutoff = year.hasCutoff
+      ? new Date(vacYear, year.cutoffMonth - 1, year.cutoffDay, 0, 0, 0, 0)
+      : null;
 
-    if (prevYear && endDate <= cutoff && prevYear.usedDays < prevYear.allowedDays) {
+    if (cutoff && prevYear && endDate <= cutoff && prevYear.usedDays < prevYear.allowedDays) {
       const prevAdded = chargeDays(prevYear, vac, days, vacYear);
       if (prevAdded < days) {
         chargeDays(year, vac, days - prevAdded, vacYear);
@@ -388,7 +390,7 @@ function onVacationsClick(e) {
 function addYear() {
   const maxYear = state.years.reduce((max, y) => Math.max(max, Number(y.year) || 0), 0);
   const nextYear = maxYear ? maxYear + 1 : null;
-  state.years.push({ id: uid(), year: nextYear, allowedDays: null, cutoffDay: null, cutoffMonth: null });
+  state.years.push({ id: uid(), year: nextYear, allowedDays: null, cutoffDay: 31, cutoffMonth: 12 });
   saveState();
   renderYears();
   renderResults();
@@ -417,6 +419,22 @@ function resetToDefaults() {
   render();
 }
 
+// ── Sort ─────────────────────────────────────────────────────────────────────
+
+function sortYears() {
+  state.years.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+  saveState();
+  renderYears();
+}
+
+function sortVacations() {
+  state.vacations.sort((a, b) =>
+    (a.start || '9999-99-99').localeCompare(b.start || '9999-99-99')
+  );
+  saveState();
+  renderVacations();
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 function init() {
@@ -428,6 +446,8 @@ function init() {
   document.getElementById('vacations-body').addEventListener('click', onVacationsClick);
   document.getElementById('add-year-btn').addEventListener('click', addYear);
   document.getElementById('add-vacation-btn').addEventListener('click', addVacation);
+  document.getElementById('sort-years-btn').addEventListener('click', sortYears);
+  document.getElementById('sort-vacations-btn').addEventListener('click', sortVacations);
   document.getElementById('reset-btn').addEventListener('click', resetToDefaults);
 
   render();
