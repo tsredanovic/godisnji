@@ -341,8 +341,7 @@ function buildLogHtml(vacEntries, yearNum) {
 
     return `<li>
       <span class="log-date">${fmtDate(entry.vac.start)}&ndash;${fmtDate(entry.vac.end)}</span>
-      <span class="log-days">${daysLabel}</span>
-      ${tag}
+      <span class="log-right">${tag}<span class="log-days">${daysLabel}</span></span>
     </li>`;
   }).join('');
 

@@ -433,10 +433,16 @@ details[open] .toggle-icon {
   flex-shrink: 0;
 }
 
+.log-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .log-days {
   color: var(--text-muted);
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .cross-tag {
