@@ -212,7 +212,12 @@ function renderYears() {
 function renderVacations() {
   const tbody = document.getElementById('vacations-body');
   tbody.innerHTML = '';
-  for (const v of [...state.vacations].sort((a, b) => (b.start || '').localeCompare(a.start || ''))) {
+  for (const v of [...state.vacations].sort((a, b) => {
+    if (!a.start && !b.start) return 0;
+    if (!a.start) return -1;
+    if (!b.start) return 1;
+    return b.start.localeCompare(a.start);
+  })) {
     const invalid = v.start && v.end && !sameYear(v.start, v.end);
     const tr = document.createElement('tr');
     if (invalid) tr.classList.add('row-error');
@@ -443,7 +448,7 @@ function addYear() {
   renderResults();
   // Focus the year input of the new (last sorted) row
   const rows = document.querySelectorAll('#years-body tr');
-  if (rows.length) rows[rows.length - 1].querySelector('input')?.focus();
+  if (rows.length) rows[0].querySelector('input')?.focus();
 }
 
 function addVacation() {
@@ -453,7 +458,7 @@ function addVacation() {
   renderResults();
   // Focus the start date of the new row (unsorted rows appear at the bottom)
   const rows = document.querySelectorAll('#vacations-body tr');
-  if (rows.length) rows[rows.length - 1].querySelector('input')?.focus();
+  if (rows.length) rows[0].querySelector('input')?.focus();
 }
 
 function resetToDefaults() {
