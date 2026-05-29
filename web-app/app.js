@@ -289,16 +289,23 @@ function renderResults() {
 }
 
 function buildYearCard(yr, yearNum, vacEntries) {
-  // yr.usedDays = budget consumed FROM this year's allowance — own vacations charged to
-  // this budget + days lent to other years, excluding cross-year days received from prev year.
-  // The engine caps this at allowedDays, so remaining is always >= 0.
-  const actualDays = yr.usedDays;
-  const remaining  = yr.allowedDays - actualDays;
-  const pct        = yr.allowedDays
+  // Uncapped demand on this year's budget:
+  //   calendar days in this year (entry.vac.days)
+  //   minus cross-year days received from a previous year's budget
+  //   plus days this year's budget lent to other years' vacations
+  const crossReceived = [...vacEntries.values()].reduce((s, e) =>
+    s + e.fromBudgets.filter(b => b.budgetYear !== yearNum).reduce((bs, b) => bs + b.days, 0), 0
+  );
+  const calendarDays = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
+  const lentDays     = yr.logs.filter(l => l.vacYear !== yearNum).reduce((s, l) => s + l.added, 0);
+  const actualDays   = calendarDays - crossReceived + lentDays;
+  const remaining    = yr.allowedDays - actualDays;
+  const isOver       = actualDays > yr.allowedDays;
+  const pct          = yr.allowedDays
     ? Math.min(100, Math.round((actualDays / yr.allowedDays) * 100))
     : 0;
-  const barClass   = pct >= 100 ? 'p-full' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
-  const remClass   = remaining === 0 ? 's-zero' : '';
+  const barClass     = isOver ? 'p-over' : pct >= 100 ? 'p-full' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
+  const remClass     = remaining < 0 ? 's-over' : remaining === 0 ? 's-zero' : '';
 
   const card = document.createElement('div');
   card.className = 'year-card';
@@ -313,8 +320,8 @@ function buildYearCard(yr, yearNum, vacEntries) {
           </div>
           <div class="card-stats">
             <span class="stat-allowed">${yr.allowedDays} allowed</span>
-            <span class="stat-used">${actualDays} used</span>
-            <span class="stat-remaining ${remClass}">${remaining} left</span>
+            <span class="stat-used ${isOver ? 's-over' : ''}">${actualDays} used</span>
+            <span class="stat-remaining ${remClass}">${remaining < 0 ? `${Math.abs(remaining)} over` : `${remaining} left`}</span>
           </div>
         </div>
         <div class="progress-bar">
