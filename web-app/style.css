@@ -400,10 +400,10 @@ details[open] .toggle-icon {
   min-width: 0;
 }
 
-.p-low  { background: var(--green); }
-.p-mid  { background: var(--yellow); }
-.p-high { background: var(--orange); }
-.p-full { background: var(--red); }
+.p-low  { background: #38bdf8; }
+.p-mid  { background: #3b82f6; }
+.p-high { background: #6366f1; }
+.p-full { background: #7c3aed; }
 
 /* ── Vacation log ── */
 .vac-log {
