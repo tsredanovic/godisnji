@@ -273,19 +273,30 @@ function renderResults() {
     }
   }
 
+  // Days each year's budget contributed to vacations in OTHER calendar years
+  const lentDays = {};
+  for (const yr of Object.values(yearsMap)) {
+    for (const log of yr.logs) {
+      if (log.vacYear !== yr.yearNum) {
+        lentDays[yr.yearNum] = (lentDays[yr.yearNum] || 0) + log.added;
+      }
+    }
+  }
+
   container.innerHTML = '';
   for (const yearNum of yearNums) {
     const yr         = yearsMap[yearNum];
     const vacEntries = vacView[yearNum] || new Map();
-    const card       = buildYearCard(yr, yearNum, vacEntries);
+    const card       = buildYearCard(yr, yearNum, vacEntries, lentDays[yearNum] || 0);
     if (collapsed.has(yearNum)) card.querySelector('details').removeAttribute('open');
     container.appendChild(card);
   }
 }
 
-function buildYearCard(yr, yearNum, vacEntries) {
-  // Actual vacation days taken in this calendar year (raw user input, not budget-capped)
-  const actualDays = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
+function buildYearCard(yr, yearNum, vacEntries, lentDays = 0) {
+  // Own vacation days (occurred in this year) + days lent from this year's budget to other years
+  const ownDays    = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
+  const actualDays = ownDays + lentDays;
   const remaining  = yr.allowedDays - actualDays;
   const isOver     = actualDays > yr.allowedDays;
   const pct        = yr.allowedDays
