@@ -259,18 +259,31 @@ function renderResults() {
     return;
   }
 
+  // Group log entries by vacation year so each vacation appears under
+  // the year it occurred in, regardless of which budget year was charged.
+  // Shape: { vacYear -> Map<vacId, {vac, fromBudgets: [{budgetYear, days}]}> }
+  const vacView = {};
+  for (const yr of Object.values(yearsMap)) {
+    for (const log of yr.logs) {
+      const vy = log.vacYear;
+      if (!vacView[vy]) vacView[vy] = new Map();
+      const key = log.vac.id;
+      if (!vacView[vy].has(key)) vacView[vy].set(key, { vac: log.vac, fromBudgets: [] });
+      vacView[vy].get(key).fromBudgets.push({ budgetYear: yr.yearNum, days: log.added });
+    }
+  }
+
   container.innerHTML = '';
   for (const yearNum of yearNums) {
-    const yr   = yearsMap[yearNum];
-    const card = buildYearCard(yr, yearNum);
-    if (collapsed.has(yearNum)) {
-      card.querySelector('details').removeAttribute('open');
-    }
+    const yr         = yearsMap[yearNum];
+    const vacEntries = vacView[yearNum] || new Map();
+    const card       = buildYearCard(yr, yearNum, vacEntries);
+    if (collapsed.has(yearNum)) card.querySelector('details').removeAttribute('open');
     container.appendChild(card);
   }
 }
 
-function buildYearCard(yr, yearNum) {
+function buildYearCard(yr, yearNum, vacEntries) {
   const remaining = yr.allowedDays - yr.usedDays;
   const pct       = yr.allowedDays
     ? Math.min(100, Math.round((yr.usedDays / yr.allowedDays) * 100))
@@ -299,23 +312,35 @@ function buildYearCard(yr, yearNum) {
           <div class="progress-fill ${barClass}" style="width:${pct}%"></div>
         </div>
       </summary>
-      ${buildLogHtml(yr.logs, yearNum)}
+      ${buildLogHtml(vacEntries, yearNum)}
     </details>
   `;
   return card;
 }
 
-function buildLogHtml(logs, yearNum) {
-  if (!logs.length) return '<p class="no-logs">No vacations recorded.</p>';
+function buildLogHtml(vacEntries, yearNum) {
+  if (!vacEntries.size) return '<p class="no-logs">No vacations recorded.</p>';
 
-  const items = logs.map(log => {
-    const isCross = log.vacYear !== yearNum;
-    const tag = isCross
-      ? `<span class="cross-tag">from ${log.vacYear}</span>`
-      : '';
-    const daysLabel = log.added === 1 ? '1 day' : `${log.added} days`;
+  const sorted = [...vacEntries.values()].sort((a, b) =>
+    (a.vac.start || '').localeCompare(b.vac.start || '')
+  );
+
+  const items = sorted.map(entry => {
+    const totalDays  = entry.fromBudgets.reduce((s, b) => s + b.days, 0);
+    const daysLabel  = totalDays === 1 ? '1 day' : `${totalDays} days`;
+    const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
+
+    let tag = '';
+    if (crossBudgets.length > 0) {
+      const crossDays = crossBudgets.reduce((s, b) => s + b.days, 0);
+      const crossYear = crossBudgets[0].budgetYear;
+      tag = crossDays === totalDays
+        ? `<span class="cross-tag">using ${crossYear} days</span>`
+        : `<span class="cross-tag">${crossDays} from ${crossYear}</span>`;
+    }
+
     return `<li>
-      <span class="log-date">${fmtDate(log.vac.start)}&ndash;${fmtDate(log.vac.end)}</span>
+      <span class="log-date">${fmtDate(entry.vac.start)}&ndash;${fmtDate(entry.vac.end)}</span>
       <span class="log-days">${daysLabel}</span>
       ${tag}
     </li>`;
