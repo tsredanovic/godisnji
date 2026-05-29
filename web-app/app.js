@@ -184,9 +184,8 @@ function scheduleResultsRender() {
 
 function renderYears() {
   const tbody = document.getElementById('years-body');
-  const sorted = [...state.years].sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
   tbody.innerHTML = '';
-  for (const y of sorted) {
+  for (const y of state.years) {
     const tr = document.createElement('tr');
     tr.dataset.id = y.id;
     tr.innerHTML = `
@@ -206,14 +205,8 @@ function renderYears() {
 
 function renderVacations() {
   const tbody = document.getElementById('vacations-body');
-  // Sort by start date; unsorted (empty) rows go to the bottom
-  const sorted = [...state.vacations].sort((a, b) => {
-    const as = a.start || '9999-99-99';
-    const bs = b.start || '9999-99-99';
-    return as.localeCompare(bs);
-  });
   tbody.innerHTML = '';
-  for (const v of sorted) {
+  for (const v of state.vacations) {
     const invalid = v.start && v.end && !sameYear(v.start, v.end);
     const tr = document.createElement('tr');
     if (invalid) tr.classList.add('row-error');
@@ -426,6 +419,18 @@ function resetToDefaults() {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
+function sortYears() {
+  state.years.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+  saveState();
+  renderYears();
+}
+
+function sortVacations() {
+  state.vacations.sort((a, b) => (a.start || '9999-99-99').localeCompare(b.start || '9999-99-99'));
+  saveState();
+  renderVacations();
+}
+
 function init() {
   loadState();
 
@@ -435,6 +440,8 @@ function init() {
   document.getElementById('vacations-body').addEventListener('click', onVacationsClick);
   document.getElementById('add-year-btn').addEventListener('click', addYear);
   document.getElementById('add-vacation-btn').addEventListener('click', addVacation);
+  document.getElementById('sort-years-btn').addEventListener('click', sortYears);
+  document.getElementById('sort-vacations-btn').addEventListener('click', sortVacations);
   document.getElementById('reset-btn').addEventListener('click', resetToDefaults);
 
   render();
