@@ -284,12 +284,15 @@ function renderResults() {
 }
 
 function buildYearCard(yr, yearNum, vacEntries) {
-  const remaining = yr.allowedDays - yr.usedDays;
-  const pct       = yr.allowedDays
-    ? Math.min(100, Math.round((yr.usedDays / yr.allowedDays) * 100))
+  // Actual vacation days taken in this calendar year (raw user input, not budget-capped)
+  const actualDays = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
+  const remaining  = yr.allowedDays - actualDays;
+  const isOver     = actualDays > yr.allowedDays;
+  const pct        = yr.allowedDays
+    ? Math.min(100, Math.round((actualDays / yr.allowedDays) * 100))
     : 0;
-  const barClass  = pct >= 100 ? 'p-full' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
-  const remClass  = remaining <= 0 ? (remaining < 0 ? 's-over' : 's-zero') : '';
+  const barClass   = isOver ? 'p-over' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
+  const remClass   = remaining <= 0 ? (remaining < 0 ? 's-over' : 's-zero') : '';
 
   const card = document.createElement('div');
   card.className = 'year-card';
@@ -304,7 +307,7 @@ function buildYearCard(yr, yearNum, vacEntries) {
           </div>
           <div class="card-stats">
             <span class="stat-allowed">${yr.allowedDays} allowed</span>
-            <span class="stat-used">${yr.usedDays} used</span>
+            <span class="stat-used ${isOver ? 's-over' : ''}">${actualDays} used</span>
             <span class="stat-remaining ${remClass}">${Math.max(0, remaining)} left</span>
           </div>
         </div>
@@ -326,8 +329,8 @@ function buildLogHtml(vacEntries, yearNum) {
   );
 
   const items = sorted.map(entry => {
-    const totalDays  = entry.fromBudgets.reduce((s, b) => s + b.days, 0);
-    const daysLabel  = totalDays === 1 ? '1 day' : `${totalDays} days`;
+    const inputDays  = Number(entry.vac.days) || 0;
+    const daysLabel  = inputDays === 1 ? '1 day' : `${inputDays} days`;
     const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
 
     let tag = '';

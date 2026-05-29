@@ -404,6 +404,7 @@ details[open] .toggle-icon {
 .p-mid  { background: #3b82f6; }
 .p-high { background: #6366f1; }
 .p-full { background: #7c3aed; }
+.p-over { background: var(--red); }
 
 /* ── Vacation log ── */
 .vac-log {
