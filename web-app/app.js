@@ -6,7 +6,7 @@ const STORAGE_KEY = 'godisnji';
 
 const DEFAULT_YEARS = [
   { id: 'dy1', year: 2025, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy2', year: 2026, allowedDays: 25, cutoffDay: null, cutoffMonth: null },
+  { id: 'dy2', year: 2026, allowedDays: 25, cutoffDay: 31, cutoffMonth: 12 },
 ];
 
 const DEFAULT_VACATIONS = [
@@ -39,7 +39,11 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      state = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed?.years) || !Array.isArray(parsed?.vacations)) {
+        throw new Error('bad shape');
+      }
+      state = parsed;
       return;
     }
   } catch (_) {}
@@ -238,6 +242,15 @@ function buildDaysCell(id, days, invalid) {
 
 function renderResults() {
   const container = document.getElementById('results-container');
+
+  // Remember which year cards the user has collapsed
+  const collapsed = new Set();
+  container.querySelectorAll('.year-card[data-year]').forEach(card => {
+    if (!card.querySelector('details[open]')) {
+      collapsed.add(Number(card.dataset.year));
+    }
+  });
+
   const yearsMap  = calculate();
   const yearNums  = Object.keys(yearsMap).map(Number).sort((a, b) => a - b);
 
@@ -248,8 +261,12 @@ function renderResults() {
 
   container.innerHTML = '';
   for (const yearNum of yearNums) {
-    const yr = yearsMap[yearNum];
-    container.appendChild(buildYearCard(yr, yearNum));
+    const yr   = yearsMap[yearNum];
+    const card = buildYearCard(yr, yearNum);
+    if (collapsed.has(yearNum)) {
+      card.querySelector('details').removeAttribute('open');
+    }
+    container.appendChild(card);
   }
 }
 
@@ -263,6 +280,7 @@ function buildYearCard(yr, yearNum) {
 
   const card = document.createElement('div');
   card.className = 'year-card';
+  card.dataset.year = yearNum;
   card.innerHTML = `
     <details open>
       <summary>
@@ -390,7 +408,7 @@ function onVacationsClick(e) {
 function addYear() {
   const maxYear = state.years.reduce((max, y) => Math.max(max, Number(y.year) || 0), 0);
   const nextYear = maxYear ? maxYear + 1 : null;
-  state.years.push({ id: uid(), year: nextYear, allowedDays: null, cutoffDay: 31, cutoffMonth: 12 });
+  state.years.push({ id: uid(), year: nextYear, allowedDays: 20, cutoffDay: 31, cutoffMonth: 12 });
   saveState();
   renderYears();
   renderResults();
