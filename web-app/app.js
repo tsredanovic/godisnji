@@ -334,9 +334,7 @@ function buildLogHtml(vacEntries, yearNum) {
     if (crossBudgets.length > 0) {
       const crossDays = crossBudgets.reduce((s, b) => s + b.days, 0);
       const crossYear = crossBudgets[0].budgetYear;
-      tag = crossDays === totalDays
-        ? `<span class="cross-tag">using ${crossYear} days</span>`
-        : `<span class="cross-tag">${crossDays} from ${crossYear}</span>`;
+      tag = `<span class="cross-tag">${crossDays} from ${crossYear}</span>`;
     }
 
     return `<li>
