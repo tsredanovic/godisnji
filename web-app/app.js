@@ -191,7 +191,7 @@ function scheduleResultsRender() {
 function renderYears() {
   const tbody = document.getElementById('years-body');
   tbody.innerHTML = '';
-  for (const y of state.years) {
+  for (const y of [...state.years].sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0))) {
     const tr = document.createElement('tr');
     tr.dataset.id = y.id;
     tr.innerHTML = `
@@ -212,7 +212,7 @@ function renderYears() {
 function renderVacations() {
   const tbody = document.getElementById('vacations-body');
   tbody.innerHTML = '';
-  for (const v of state.vacations) {
+  for (const v of [...state.vacations].sort((a, b) => (b.start || '').localeCompare(a.start || ''))) {
     const invalid = v.start && v.end && !sameYear(v.start, v.end);
     const tr = document.createElement('tr');
     if (invalid) tr.classList.add('row-error');
@@ -252,7 +252,7 @@ function renderResults() {
   });
 
   const yearsMap  = calculate();
-  const yearNums  = Object.keys(yearsMap).map(Number).sort((a, b) => a - b);
+  const yearNums  = Object.keys(yearsMap).map(Number).sort((a, b) => b - a);
 
   if (!yearNums.length) {
     container.innerHTML = '<p class="no-data">Add year configurations to see results.</p>';
@@ -469,14 +469,14 @@ function resetToDefaults() {
 // ── Sort ─────────────────────────────────────────────────────────────────────
 
 function sortYears() {
-  state.years.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+  state.years.sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
   saveState();
   renderYears();
 }
 
 function sortVacations() {
   state.vacations.sort((a, b) =>
-    (a.start || '9999-99-99').localeCompare(b.start || '9999-99-99')
+    (b.start || '').localeCompare(a.start || '')
   );
   saveState();
   renderVacations();
