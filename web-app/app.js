@@ -5,8 +5,8 @@ const STORAGE_KEY = 'godisnji';
 // ── Default data ─────────────────────────────────────────────────────────────
 
 const DEFAULT_YEARS = [
+  { id: 'dy1', year: 2025, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
   { id: 'dy2', year: 2026, allowedDays: 25, cutoffDay: null, cutoffMonth: null },
-  { id: 'dy1', year: 2025, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
 ];
 
 const DEFAULT_VACATIONS = [
@@ -419,18 +419,6 @@ function resetToDefaults() {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
-function sortYears() {
-  state.years.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
-  saveState();
-  renderYears();
-}
-
-function sortVacations() {
-  state.vacations.sort((a, b) => (a.start || '9999-99-99').localeCompare(b.start || '9999-99-99'));
-  saveState();
-  renderVacations();
-}
-
 function init() {
   loadState();
 
@@ -440,8 +428,6 @@ function init() {
   document.getElementById('vacations-body').addEventListener('click', onVacationsClick);
   document.getElementById('add-year-btn').addEventListener('click', addYear);
   document.getElementById('add-vacation-btn').addEventListener('click', addVacation);
-  document.getElementById('sort-years-btn').addEventListener('click', sortYears);
-  document.getElementById('sort-vacations-btn').addEventListener('click', sortVacations);
   document.getElementById('reset-btn').addEventListener('click', resetToDefaults);
 
   render();
