@@ -347,7 +347,10 @@ function onYearInput(e) {
   } else {
     y[field] = e.target.value !== '' ? Number(e.target.value) : null;
   }
-  saveState();
+  // Don't persist a null allowedDays — if the user is mid-edit (cleared the
+  // field before typing the new value) we keep the old stored value so a
+  // reload doesn't permanently drop the year from results.
+  if (field !== 'allowedDays' || y.allowedDays != null) saveState();
   scheduleResultsRender();
 }
 
@@ -361,24 +364,24 @@ function onVacationInput(e) {
   if (field === 'start' || field === 'end') {
     v[field] = el.value || null;
 
-    // Auto-recalculate weekdays when both dates are set and in the same year
-    if (v.start && v.end && sameYear(v.start, v.end)) {
+    const invalid = !!(v.start && v.end && !sameYear(v.start, v.end));
+    if (!invalid && v.start && v.end) {
       v.days = countWeekdays(v.start, v.end);
-      // Update the days input in place (avoid full re-render to preserve focus)
-      const row = document.querySelector(`#vacations-body tr[data-id="${id}"]`);
-      if (row) {
-        const daysInput = row.querySelector('.inp-vdays');
-        if (daysInput) daysInput.value = v.days;
-      }
     }
 
-    // Update error state without re-rendering the whole table
     const row = document.querySelector(`#vacations-body tr[data-id="${id}"]`);
     if (row) {
-      const invalid = v.start && v.end && !sameYear(v.start, v.end);
-      row.classList.toggle('row-error', !!invalid);
+      row.classList.toggle('row-error', invalid);
       const td = row.querySelectorAll('td')[2];
-      if (td) td.innerHTML = buildDaysCell(id, v.days, invalid);
+      const hasBadge = !!td?.querySelector('.err-badge');
+      if (invalid !== hasBadge) {
+        // Error badge added/removed — must rebuild the cell
+        if (td) td.innerHTML = buildDaysCell(id, v.days, invalid);
+      } else {
+        // Error state unchanged — update days value in place (preserves focus)
+        const daysInput = td?.querySelector('.inp-vdays');
+        if (daysInput) daysInput.value = v.days ?? '';
+      }
     }
   } else if (field === 'days') {
     v.days = el.value !== '' ? Number(el.value) : 0;
