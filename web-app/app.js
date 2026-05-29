@@ -284,18 +284,16 @@ function renderResults() {
 }
 
 function buildYearCard(yr, yearNum, vacEntries) {
-  // yr.usedDays = budget consumed FROM this year (own vacations + days lent to other years,
-  // but NOT cross-year days received from a previous year's budget)
-  const actualDays  = yr.usedDays;
-  // Calendar days: total vacation days entered for this year (used for over-budget detection)
-  const calendarDays = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
-  const remaining   = yr.allowedDays - actualDays;
-  const isOver      = calendarDays > yr.allowedDays;
+  // yr.usedDays = budget consumed FROM this year's allowance — own vacations charged to
+  // this budget + days lent to other years, excluding cross-year days received from prev year.
+  // The engine caps this at allowedDays, so remaining is always >= 0.
+  const actualDays = yr.usedDays;
+  const remaining  = yr.allowedDays - actualDays;
   const pct        = yr.allowedDays
     ? Math.min(100, Math.round((actualDays / yr.allowedDays) * 100))
     : 0;
-  const barClass   = isOver ? 'p-over' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
-  const remClass   = remaining <= 0 ? (remaining < 0 ? 's-over' : 's-zero') : '';
+  const barClass   = pct >= 100 ? 'p-full' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
+  const remClass   = remaining === 0 ? 's-zero' : '';
 
   const card = document.createElement('div');
   card.className = 'year-card';
@@ -310,8 +308,8 @@ function buildYearCard(yr, yearNum, vacEntries) {
           </div>
           <div class="card-stats">
             <span class="stat-allowed">${yr.allowedDays} allowed</span>
-            <span class="stat-used ${isOver ? 's-over' : ''}">${actualDays} used</span>
-            <span class="stat-remaining ${remClass}">${Math.max(0, remaining)} left</span>
+            <span class="stat-used">${actualDays} used</span>
+            <span class="stat-remaining ${remClass}">${remaining} left</span>
           </div>
         </div>
         <div class="progress-bar">
