@@ -5,14 +5,14 @@ const STORAGE_KEY = 'godisnji';
 // ── Default data (mirrors vacation.txt) ──────────────────────────────────────
 
 const DEFAULT_YEARS = [
-  { id: 'dy1', year: 2019, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy2', year: 2020, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy3', year: 2021, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy4', year: 2022, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy5', year: 2023, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy6', year: 2024, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy7', year: 2025, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
   { id: 'dy8', year: 2026, allowedDays: 25, cutoffDay: null, cutoffMonth: null },
+  { id: 'dy7', year: 2025, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy6', year: 2024, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy5', year: 2023, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy4', year: 2022, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy3', year: 2021, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy2', year: 2020, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy1', year: 2019, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
 ];
 
 const DEFAULT_VACATIONS = [
@@ -420,7 +420,9 @@ function onVacationsClick(e) {
 }
 
 function addYear() {
-  state.years.push({ id: uid(), year: null, allowedDays: null, cutoffDay: null, cutoffMonth: null });
+  const maxYear = state.years.reduce((max, y) => Math.max(max, Number(y.year) || 0), 0);
+  const nextYear = maxYear ? maxYear + 1 : null;
+  state.years.push({ id: uid(), year: nextYear, allowedDays: null, cutoffDay: null, cutoffMonth: null });
   saveState();
   renderYears();
   renderResults();
