@@ -124,9 +124,8 @@ function calculate() {
     map[num] = {
       yearNum:     num,
       allowedDays: days,
-      hasCutoff:   !!(y.cutoffDay && y.cutoffMonth),
-      cutoffDay:   y.cutoffDay   || 31,
-      cutoffMonth: y.cutoffMonth || 12,
+      cutoffDay:   y.cutoffDay   || null,
+      cutoffMonth: y.cutoffMonth || null,
       usedDays:    0,
       logs:        [],
     };
@@ -147,7 +146,7 @@ function calculate() {
     if (!year) continue;
     const prevYear = map[vacYear - 1] || null;
 
-    const cutoff = year.hasCutoff
+    const cutoff = (year.cutoffDay && year.cutoffMonth)
       ? new Date(vacYear, year.cutoffMonth - 1, year.cutoffDay, 0, 0, 0, 0)
       : null;
 
@@ -186,12 +185,14 @@ function scheduleResultsRender() {
   _renderTimer = setTimeout(renderResults, 150);
 }
 
+const byYearDesc = (a, b) => (Number(b.year) || 0) - (Number(a.year) || 0);
+
 // ── Render: Years table ──────────────────────────────────────────────────────
 
 function renderYears() {
   const tbody = document.getElementById('years-body');
   tbody.innerHTML = '';
-  for (const y of [...state.years].sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0))) {
+  for (const y of [...state.years].sort(byYearDesc)) {
     const tr = document.createElement('tr');
     tr.dataset.id = y.id;
     tr.innerHTML = `
@@ -245,28 +246,9 @@ function buildDaysCell(id, days, invalid) {
 
 // ── Render: Results ──────────────────────────────────────────────────────────
 
-function renderResults() {
-  const container = document.getElementById('results-container');
-
-  // Remember which year cards the user has collapsed
-  const collapsed = new Set();
-  container.querySelectorAll('.year-card[data-year]').forEach(card => {
-    if (!card.querySelector('details[open]')) {
-      collapsed.add(Number(card.dataset.year));
-    }
-  });
-
-  const yearsMap  = calculate();
-  const yearNums  = Object.keys(yearsMap).map(Number).sort((a, b) => b - a);
-
-  if (!yearNums.length) {
-    container.innerHTML = '<p class="no-data">Add year configurations to see results.</p>';
-    return;
-  }
-
-  // Group log entries by vacation year so each vacation appears under
-  // the year it occurred in, regardless of which budget year was charged.
-  // Shape: { vacYear -> Map<vacId, {vac, fromBudgets: [{budgetYear, days}]}> }
+// Pivot log entries from budget-year grouping to calendar-year grouping.
+// Returns: { vacYear -> Map<vacId, {vac, fromBudgets: [{budgetYear, days}]}> }
+function buildVacView(yearsMap) {
   const vacView = {};
   for (const yr of Object.values(yearsMap)) {
     for (const log of yr.logs) {
@@ -277,28 +259,52 @@ function renderResults() {
       vacView[vy].get(key).fromBudgets.push({ budgetYear: yr.yearNum, days: log.added });
     }
   }
+  return vacView;
+}
+
+function renderResults() {
+  const container = document.getElementById('results-container');
+
+  const collapsed = new Set();
+  container.querySelectorAll('.year-card[data-year]').forEach(card => {
+    if (!card.querySelector('details[open]')) collapsed.add(Number(card.dataset.year));
+  });
+
+  const yearsMap = calculate();
+  const yearNums = Object.keys(yearsMap).map(Number).sort((a, b) => b - a);
+
+  if (!yearNums.length) {
+    container.innerHTML = '<p class="no-data">Add year configurations to see results.</p>';
+    return;
+  }
+
+  const vacView = buildVacView(yearsMap);
 
   container.innerHTML = '';
   for (const yearNum of yearNums) {
-    const yr         = yearsMap[yearNum];
-    const vacEntries = vacView[yearNum] || new Map();
-    const card       = buildYearCard(yr, yearNum, vacEntries);
+    const yr   = yearsMap[yearNum];
+    const card = buildYearCard(yr, yearNum, vacView[yearNum] || new Map());
     if (collapsed.has(yearNum)) card.querySelector('details').removeAttribute('open');
     container.appendChild(card);
   }
 }
 
 function buildYearCard(yr, yearNum, vacEntries) {
-  // Uncapped demand on this year's budget:
-  //   calendar days in this year (entry.vac.days)
-  //   minus cross-year days received from a previous year's budget
-  //   plus days this year's budget lent to other years' vacations
-  const crossReceived = [...vacEntries.values()].reduce((s, e) =>
-    s + e.fromBudgets.filter(b => b.budgetYear !== yearNum).reduce((bs, b) => bs + b.days, 0), 0
-  );
-  const calendarDays = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
-  const lentDays     = yr.logs.filter(l => l.vacYear !== yearNum).reduce((s, l) => s + l.added, 0);
-  const actualDays   = calendarDays - crossReceived + lentDays;
+  // Single pass: compute calendarDays and crossReceived, collect entries for log display.
+  // Uncapped demand on this year's budget = calendarDays - crossReceived + lentDays.
+  const entries = [...vacEntries.values()];
+  let calendarDays = 0, crossReceived = 0;
+  for (const e of entries) {
+    calendarDays += Number(e.vac.days) || 0;
+    for (const b of e.fromBudgets) {
+      if (b.budgetYear !== yearNum) crossReceived += b.days;
+    }
+  }
+  // Sort ascending (oldest first) for the log display inside this card
+  entries.sort((a, b) => (a.vac.start || '').localeCompare(b.vac.start || ''));
+
+  const lentDays   = yr.logs.filter(l => l.vacYear !== yearNum).reduce((s, l) => s + l.added, 0);
+  const actualDays = calendarDays - crossReceived + lentDays;
   const remaining    = yr.allowedDays - actualDays;
   const isOver       = actualDays > yr.allowedDays;
   const pct          = yr.allowedDays
@@ -328,20 +334,17 @@ function buildYearCard(yr, yearNum, vacEntries) {
           <div class="progress-fill ${barClass}" style="width:${pct}%"></div>
         </div>
       </summary>
-      ${buildLogHtml(vacEntries, yearNum)}
+      ${buildLogHtml(entries, yearNum)}
     </details>
   `;
   return card;
 }
 
-function buildLogHtml(vacEntries, yearNum) {
-  if (!vacEntries.size) return '<p class="no-logs">No vacations recorded.</p>';
+// entries: pre-sorted array from buildYearCard (oldest first within the year card)
+function buildLogHtml(entries, yearNum) {
+  if (!entries.length) return '<p class="no-logs">No vacations recorded.</p>';
 
-  const sorted = [...vacEntries.values()].sort((a, b) =>
-    (a.vac.start || '').localeCompare(b.vac.start || '')
-  );
-
-  const items = sorted.map(entry => {
+  const items = entries.map(entry => {
     const inputDays  = Number(entry.vac.days) || 0;
     const daysLabel  = inputDays === 1 ? '1 day' : `${inputDays} days`;
     const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
@@ -481,7 +484,7 @@ function resetToDefaults() {
 // ── Sort ─────────────────────────────────────────────────────────────────────
 
 function sortYears() {
-  state.years.sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+  state.years.sort(byYearDesc);
   saveState();
   renderYears();
 }
