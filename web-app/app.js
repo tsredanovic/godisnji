@@ -273,32 +273,24 @@ function renderResults() {
     }
   }
 
-  // Days each year's budget contributed to vacations in OTHER calendar years
-  const lentDays = {};
-  for (const yr of Object.values(yearsMap)) {
-    for (const log of yr.logs) {
-      if (log.vacYear !== yr.yearNum) {
-        lentDays[yr.yearNum] = (lentDays[yr.yearNum] || 0) + log.added;
-      }
-    }
-  }
-
   container.innerHTML = '';
   for (const yearNum of yearNums) {
     const yr         = yearsMap[yearNum];
     const vacEntries = vacView[yearNum] || new Map();
-    const card       = buildYearCard(yr, yearNum, vacEntries, lentDays[yearNum] || 0);
+    const card       = buildYearCard(yr, yearNum, vacEntries);
     if (collapsed.has(yearNum)) card.querySelector('details').removeAttribute('open');
     container.appendChild(card);
   }
 }
 
-function buildYearCard(yr, yearNum, vacEntries, lentDays = 0) {
-  // Own vacation days (occurred in this year) + days lent from this year's budget to other years
-  const ownDays    = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
-  const actualDays = ownDays + lentDays;
-  const remaining  = yr.allowedDays - actualDays;
-  const isOver     = actualDays > yr.allowedDays;
+function buildYearCard(yr, yearNum, vacEntries) {
+  // yr.usedDays = budget consumed FROM this year (own vacations + days lent to other years,
+  // but NOT cross-year days received from a previous year's budget)
+  const actualDays  = yr.usedDays;
+  // Calendar days: total vacation days entered for this year (used for over-budget detection)
+  const calendarDays = [...vacEntries.values()].reduce((s, e) => s + (Number(e.vac.days) || 0), 0);
+  const remaining   = yr.allowedDays - actualDays;
+  const isOver      = calendarDays > yr.allowedDays;
   const pct        = yr.allowedDays
     ? Math.min(100, Math.round((actualDays / yr.allowedDays) * 100))
     : 0;
