@@ -232,7 +232,7 @@ function buildDaysCell(id, days, invalid) {
     ? `<span class="err-badge" title="Start and end must be in the same year">!</span>`
     : '';
   return `<div class="days-cell">
-    <input type="number" class="inp-vdays" value="${days || ''}"
+    <input type="number" class="inp-vdays" value="${days ?? ''}"
       min="0" max="365" data-id="${id}" data-field="days">
     ${badge}
   </div>`;
