@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Godišnji – Vacation Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-brand">
+      <h1>Godišnji</h1>
+      <span class="header-sub">Vacation Days Tracker</span>
+    </div>
+    <button id="reset-btn" class="btn-ghost">Reset to defaults</button>
+  </header>
+
+  <main>
+    <div class="config-panel">
+
+      <section class="card">
+        <div class="section-header">
+          <h2>Allowed Vacation Days</h2>
+          <button id="add-year-btn" class="btn-add">+ Add Year</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Days</th>
+                <th>Carryover Cutoff <span class="th-hint">DD.MM</span></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="years-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>Vacations</h2>
+          <button id="add-vacation-btn" class="btn-add">+ Add</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Start</th>
+                <th>End</th>
+                <th>Days</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="vacations-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="results-panel">
+      <h2>Results</h2>
+      <div id="results-container"></div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

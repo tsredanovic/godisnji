@@ -1,0 +1,460 @@
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --border: #e2e6ec;
+  --text: #1a1d23;
+  --text-muted: #6b7280;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --orange: #f97316;
+  --red: #ef4444;
+  --red-bg: #fff5f5;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Header ── */
+header {
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+header h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.header-sub {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* ── Main layout ── */
+main {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* ── Config panel ── */
+.config-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 60px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.section-header h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ── Tables ── */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  background: #fafbfc;
+  white-space: nowrap;
+}
+
+.th-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #adb5bd;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+tbody tr.row-error {
+  background: var(--red-bg);
+}
+
+tbody tr.row-error:hover {
+  background: #fee2e2;
+}
+
+tbody td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Form inputs ── */
+input[type="number"],
+input[type="text"],
+input[type="date"] {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.row-error input {
+  border-color: #fca5a5;
+}
+
+.row-error input:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+}
+
+.inp-year   { width: 68px; }
+.inp-days   { width: 58px; }
+.inp-cutoff { width: 68px; text-align: center; }
+.inp-vdays  { width: 54px; }
+
+/* ── Buttons ── */
+.btn-add {
+  padding: 5px 11px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-add:hover {
+  background: var(--accent-hover);
+}
+
+.btn-remove {
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition: all 0.15s;
+  display: block;
+}
+
+.btn-remove:hover {
+  background: var(--red-bg);
+  border-color: #fca5a5;
+  color: var(--red);
+}
+
+.btn-ghost {
+  padding: 6px 13px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #cbd5e1;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+/* ── Error badge ── */
+.days-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.err-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: var(--red);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: help;
+  user-select: none;
+}
+
+/* ── Results panel ── */
+.results-panel > h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text);
+  padding-left: 2px;
+}
+
+/* ── Year cards ── */
+.year-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.year-card details > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px 12px;
+  user-select: none;
+}
+
+.year-card details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-icon {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  display: inline-block;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+details[open] .toggle-icon {
+  transform: rotate(90deg);
+}
+
+.card-year {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.card-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.stat-allowed {
+  color: var(--text-muted);
+}
+
+.stat-used {
+  color: #374151;
+  font-weight: 500;
+}
+
+.stat-remaining {
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.stat-remaining.s-zero {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.stat-remaining.s-over {
+  color: var(--red);
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+  min-width: 0;
+}
+
+.p-low  { background: var(--green); }
+.p-mid  { background: var(--yellow); }
+.p-high { background: var(--orange); }
+.p-full { background: var(--red); }
+
+/* ── Vacation log ── */
+.vac-log {
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.vac-log li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px 7px 28px;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 8px;
+}
+
+.vac-log li:last-child {
+  border-bottom: none;
+}
+
+.log-date {
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.77rem;
+  flex-shrink: 0;
+}
+
+.log-days {
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cross-tag {
+  font-size: 0.7rem;
+  background: #eff6ff;
+  color: #3b82f6;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.no-logs {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.no-data {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 32px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  .config-panel {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
