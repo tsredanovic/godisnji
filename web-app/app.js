@@ -2,49 +2,22 @@
 
 const STORAGE_KEY = 'godisnji';
 
-// ── Default data (mirrors vacation.txt) ──────────────────────────────────────
+// ── Default data ─────────────────────────────────────────────────────────────
 
 const DEFAULT_YEARS = [
-  { id: 'dy8', year: 2026, allowedDays: 25, cutoffDay: null, cutoffMonth: null },
-  { id: 'dy7', year: 2025, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy6', year: 2024, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy5', year: 2023, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy4', year: 2022, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy3', year: 2021, allowedDays: 22, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy2', year: 2020, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
-  { id: 'dy1', year: 2019, allowedDays: 20, cutoffDay: 30, cutoffMonth: 6 },
+  { id: 'dy2', year: 2026, allowedDays: 25, cutoffDay: null, cutoffMonth: null },
+  { id: 'dy1', year: 2025, allowedDays: 25, cutoffDay: 30, cutoffMonth: 6 },
 ];
 
 const DEFAULT_VACATIONS = [
-  { id: 'dv1',  start: '2019-06-03', end: '2019-06-16', days: 10 },
-  { id: 'dv2',  start: '2019-06-17', end: '2019-06-28', days: 8  },
-  { id: 'dv3',  start: '2019-12-27', end: '2019-12-31', days: 2  },
-  { id: 'dv4',  start: '2020-01-01', end: '2020-01-03', days: 2  },
-  { id: 'dv5',  start: '2020-07-22', end: '2020-08-07', days: 12 },
-  { id: 'dv6',  start: '2021-06-17', end: '2021-06-25', days: 6  },
-  { id: 'dv7',  start: '2021-07-19', end: '2021-07-30', days: 10 },
-  { id: 'dv8',  start: '2022-01-10', end: '2022-01-13', days: 4  },
-  { id: 'dv9',  start: '2022-04-19', end: '2022-04-20', days: 2  },
-  { id: 'dv10', start: '2022-06-20', end: '2022-06-23', days: 3  },
-  { id: 'dv11', start: '2022-07-15', end: '2022-08-01', days: 12 },
-  { id: 'dv12', start: '2022-09-22', end: '2022-09-22', days: 1  },
-  { id: 'dv13', start: '2023-06-02', end: '2023-06-02', days: 1  },
-  { id: 'dv14', start: '2023-06-09', end: '2023-06-09', days: 1  },
-  { id: 'dv15', start: '2023-06-14', end: '2023-06-23', days: 7  },
-  { id: 'dv16', start: '2023-08-01', end: '2023-08-16', days: 11 },
-  { id: 'dv17', start: '2023-09-12', end: '2023-09-19', days: 6  },
-  { id: 'dv18', start: '2023-09-29', end: '2023-09-29', days: 1  },
-  { id: 'dv19', start: '2024-01-18', end: '2024-01-24', days: 5  },
-  { id: 'dv20', start: '2024-07-11', end: '2024-08-01', days: 16 },
-  { id: 'dv21', start: '2024-08-06', end: '2024-08-08', days: 3  },
-  { id: 'dv22', start: '2025-02-24', end: '2025-02-28', days: 5  },
-  { id: 'dv23', start: '2025-06-18', end: '2025-06-20', days: 2  },
-  { id: 'dv24', start: '2025-07-14', end: '2025-07-25', days: 10 },
-  { id: 'dv25', start: '2026-01-05', end: '2026-01-09', days: 4  },
-  { id: 'dv26', start: '2026-04-27', end: '2026-04-28', days: 2  },
-  { id: 'dv27', start: '2026-05-11', end: '2026-05-12', days: 2  },
-  { id: 'dv28', start: '2026-07-13', end: '2026-07-17', days: 5  },
-  { id: 'dv29', start: '2026-07-27', end: '2026-08-07', days: 10 },
+  { id: 'dv1', start: '2025-02-24', end: '2025-02-28', days: 5  },
+  { id: 'dv2', start: '2025-06-18', end: '2025-06-20', days: 2  },
+  { id: 'dv3', start: '2025-07-14', end: '2025-07-25', days: 10 },
+  { id: 'dv4', start: '2026-01-05', end: '2026-01-09', days: 4  },
+  { id: 'dv5', start: '2026-04-27', end: '2026-04-28', days: 2  },
+  { id: 'dv6', start: '2026-05-11', end: '2026-05-12', days: 2  },
+  { id: 'dv7', start: '2026-07-13', end: '2026-07-17', days: 5  },
+  { id: 'dv8', start: '2026-07-27', end: '2026-08-07', days: 10 },
 ];
 
 // ── State ────────────────────────────────────────────────────────────────────
