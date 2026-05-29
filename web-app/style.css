@@ -76,10 +76,6 @@ main {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  position: sticky;
-  top: 60px;
-  max-height: calc(100vh - 80px);
-  overflow-y: auto;
 }
 
 /* ── Cards ── */
@@ -453,8 +449,6 @@ details[open] .toggle-icon {
   }
 
   .config-panel {
-    position: static;
-    max-height: none;
     overflow-y: visible;
   }
 }
