@@ -289,9 +289,9 @@ function renderResults() {
   }
 }
 
-function buildYearCard(yr, yearNum, vacEntries) {
-  // Single pass: compute calendarDays and crossReceived, collect entries for log display.
-  // Uncapped demand on this year's budget = calendarDays - crossReceived + lentDays.
+// Single pass: compute calendarDays and crossReceived, collect entries for log display.
+// Uncapped demand on this year's budget = calendarDays - crossReceived + lentDays.
+function computeYearStats(yr, yearNum, vacEntries) {
   const entries = [...vacEntries.values()];
   let calendarDays = 0, crossReceived = 0;
   for (const e of entries) {
@@ -300,7 +300,7 @@ function buildYearCard(yr, yearNum, vacEntries) {
       if (b.budgetYear !== yearNum) crossReceived += b.days;
     }
   }
-  // Sort ascending (oldest first) for the log display inside this card
+  // Sort ascending (oldest first) for the log display
   entries.sort((a, b) => (a.vac.start || '').localeCompare(b.vac.start || ''));
 
   const lentDays   = yr.logs.filter(l => l.vacYear !== yearNum).reduce((s, l) => s + l.added, 0);
@@ -312,6 +312,13 @@ function buildYearCard(yr, yearNum, vacEntries) {
     : 0;
   const barClass     = isOver ? 'p-over' : pct >= 100 ? 'p-full' : pct >= 90 ? 'p-high' : pct >= 70 ? 'p-mid' : 'p-low';
   const remClass     = remaining < 0 ? 's-over' : remaining === 0 ? 's-zero' : '';
+
+  return { entries, calendarDays, crossReceived, lentDays, actualDays, remaining, isOver, pct, barClass, remClass };
+}
+
+function buildYearCard(yr, yearNum, vacEntries) {
+  const { entries, actualDays, remaining, isOver, pct, barClass, remClass } =
+    computeYearStats(yr, yearNum, vacEntries);
 
   const card = document.createElement('div');
   card.className = 'year-card';
@@ -340,21 +347,29 @@ function buildYearCard(yr, yearNum, vacEntries) {
   return card;
 }
 
+// Shared by the web UI log and the PDF export so the two never drift apart.
+function formatDaysLabel(days) {
+  const n = Number(days) || 0;
+  return n === 1 ? '1 day' : `${n} days`;
+}
+
+// entry: { vac, fromBudgets }; yearNum: the card's own year.
+// Returns { days, year } describing days charged to a *different* year's
+// budget, or null if this entry didn't cross budgets.
+function crossBudgetSummary(entry, yearNum) {
+  const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
+  if (!crossBudgets.length) return null;
+  return { days: crossBudgets.reduce((s, b) => s + b.days, 0), year: crossBudgets[0].budgetYear };
+}
+
 // entries: pre-sorted array from buildYearCard (oldest first within the year card)
 function buildLogHtml(entries, yearNum) {
   if (!entries.length) return '<p class="no-logs">No vacations recorded.</p>';
 
   const items = entries.map(entry => {
-    const inputDays  = Number(entry.vac.days) || 0;
-    const daysLabel  = inputDays === 1 ? '1 day' : `${inputDays} days`;
-    const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
-
-    let tag = '';
-    if (crossBudgets.length > 0) {
-      const crossDays = crossBudgets.reduce((s, b) => s + b.days, 0);
-      const crossYear = crossBudgets[0].budgetYear;
-      tag = `<span class="cross-tag">${crossDays} from ${crossYear}</span>`;
-    }
+    const daysLabel = formatDaysLabel(entry.vac.days);
+    const cross = crossBudgetSummary(entry, yearNum);
+    const tag = cross ? `<span class="cross-tag">${cross.days} from ${cross.year}</span>` : '';
 
     return `<li>
       <span class="log-date">${fmtDate(entry.vac.start)}&ndash;${fmtDate(entry.vac.end)}</span>
@@ -511,6 +526,21 @@ function init() {
   document.getElementById('sort-years-btn').addEventListener('click', sortYears);
   document.getElementById('sort-vacations-btn').addEventListener('click', sortVacations);
   document.getElementById('reset-btn').addEventListener('click', resetToDefaults);
+
+  document.getElementById('export-pdf-btn').addEventListener('click', () => {
+    exportPdf().catch(err => {
+      console.error(err);
+      alert('Could not generate the PDF export.');
+    });
+  });
+
+  const importInput = document.getElementById('import-pdf-input');
+  document.getElementById('import-pdf-btn').addEventListener('click', () => importInput.click());
+  importInput.addEventListener('change', () => {
+    const file = importInput.files[0];
+    importInput.value = '';
+    if (file) importPdfFile(file);
+  });
 
   render();
 }
