@@ -9,36 +9,44 @@
 
 const PDF_ATTACHMENT_NAME = 'godisnji-data.json';
 
-const PDF_COLORS = {
-  text:  '#1a1d23',
-  muted: '#6b7280',
-  barBg: '#e5e7eb',
-  pLow:  '#38bdf8',
-  pMid:  '#3b82f6',
-  pHigh: '#6366f1',
-  pFull: '#7c3aed',
-  pOver: '#ef4444',
-};
+// Reads the app's actual theme colors (style.css `:root` custom properties)
+// instead of hardcoding a second copy of them here.
+function readThemeColors() {
+  const css = getComputedStyle(document.documentElement);
+  const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  return {
+    text:  v('--text', '#1a1d23'),
+    muted: v('--text-muted', '#6b7280'),
+    barBg: v('--bar-bg', '#e5e7eb'),
+    pLow:  v('--p-low', '#38bdf8'),
+    pMid:  v('--p-mid', '#3b82f6'),
+    pHigh: v('--p-high', '#6366f1'),
+    pFull: v('--p-full', '#7c3aed'),
+    pOver: v('--red', '#ef4444'),
+  };
+}
 
 function hexColor(hex) {
   const n = parseInt(hex.slice(1), 16);
   return PDFLib.rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 }
 
-function barColorFor(barClass) {
-  return hexColor({
-    'p-low': PDF_COLORS.pLow, 'p-mid': PDF_COLORS.pMid,
-    'p-high': PDF_COLORS.pHigh, 'p-full': PDF_COLORS.pFull, 'p-over': PDF_COLORS.pOver,
-  }[barClass] || PDF_COLORS.pLow);
+function barColorFor(colors, barClass) {
+  const hex = {
+    'p-low': colors.pLow, 'p-mid': colors.pMid,
+    'p-high': colors.pHigh, 'p-full': colors.pFull, 'p-over': colors.pOver,
+  }[barClass] || colors.pLow;
+  return hexColor(hex);
 }
 
 // ── Page/layout helper ───────────────────────────────────────────────────────
 
 class PdfReport {
-  constructor(pdfDoc, font, bold) {
+  constructor(pdfDoc, font, bold, textColor) {
     this.pdfDoc     = pdfDoc;
     this.font        = font;
     this.bold        = bold;
+    this.textColor   = textColor;
     this.pageW       = 595.28; // A4 portrait, points
     this.pageH       = 841.89;
     this.marginX     = 48;
@@ -50,87 +58,103 @@ class PdfReport {
     this.addPage();
   }
 
+  get maxBlockHeight() {
+    return this.pageH - this.marginTop - this.marginBottom;
+  }
+
   addPage() {
     this.page = this.pdfDoc.addPage([this.pageW, this.pageH]);
     this.y = this.pageH - this.marginTop;
   }
 
+  // Starts a new page if `height` doesn't fit in the remaining space on the
+  // current one. Returns true when a new page was started, so callers can
+  // redraw context (e.g. a "continued" header) that doesn't otherwise repeat.
   ensureSpace(height) {
-    if (this.y - height < this.marginBottom) this.addPage();
+    if (this.y - height < this.marginBottom) {
+      this.addPage();
+      return true;
+    }
+    return false;
   }
 
-  text(str, { x, y, size = 9.5, font, color, maxWidth } = {}) {
-    let s = str;
-    const f = font || this.font;
-    if (maxWidth) {
-      while (s.length > 1 && f.widthOfTextAtSize(s, size) > maxWidth) s = s.slice(0, -1);
-      if (s !== str) s = s.slice(0, -1) + '…';
-    }
-    this.page.drawText(s, {
+  text(str, { x, y, size = 9.5, font, color } = {}) {
+    this.page.drawText(str, {
       x: x ?? this.marginX,
       y: y ?? this.y,
       size,
-      font: f,
-      color: color || hexColor(PDF_COLORS.text),
+      font: font || this.font,
+      color: color || this.textColor,
     });
   }
 
-  rect({ x, y, width, height, color, borderColor, borderWidth }) {
-    this.page.drawRectangle({ x, y, width, height, color, borderColor, borderWidth });
+  rect({ x, y, width, height, color }) {
+    this.page.drawRectangle({ x, y, width, height, color });
   }
-
 }
 
 // ── Results section (mirrors buildYearCard) ─────────────────────────────────
 
-function drawResults(r, yearsMap, vacView) {
+function drawResults(r, yearsMap, vacView, colors) {
   const yearNums = Object.keys(yearsMap).map(Number).sort((a, b) => b - a);
   if (!yearNums.length) return;
 
+  const mutedColor = hexColor(colors.muted);
+  const overColor = hexColor(colors.pOver);
+
   for (const yearNum of yearNums) {
     const yr = yearsMap[yearNum];
-    const { entries, actualDays, remaining, isOver, pct, barClass } =
+    const { entries, actualDays, remaining, pct, barClass } =
       computeYearStats(yr, yearNum, vacView[yearNum] || new Map());
 
-    r.ensureSpace(58);
+    // Reserve space for the whole year block (heading + bar + its log lines)
+    // up front, so a year with more than a couple of entries doesn't get its
+    // heading stranded on one page while all its entries land on the next.
+    // Capped at a full page's height for years with too many entries to fit
+    // on any single page — those still need the per-entry fallback below.
+    const entryLinesHeight = entries.length ? entries.length * 15 : 20;
+    const blockHeight = Math.min(16 + 22 + entryLinesHeight + 12, r.maxBlockHeight);
+    r.ensureSpace(blockHeight);
 
     r.text(String(yearNum), { size: 15, font: r.bold });
     const statsStr = `${yr.allowedDays} allowed   ${actualDays} used   ${remaining < 0 ? `${Math.abs(remaining)} over` : `${remaining} left`}`;
     const statsW = r.font.widthOfTextAtSize(statsStr, 9.5);
     r.text(statsStr, {
       x: r.marginX + r.contentW - statsW, size: 9.5,
-      color: remaining < 0 ? hexColor(PDF_COLORS.pOver) : hexColor(PDF_COLORS.muted),
+      color: remaining < 0 ? overColor : mutedColor,
     });
     r.y -= 16;
 
     // Progress bar
     const barH = 6;
-    r.rect({ x: r.marginX, y: r.y - barH + 2, width: r.contentW, height: barH, color: hexColor(PDF_COLORS.barBg) });
+    r.rect({ x: r.marginX, y: r.y - barH + 2, width: r.contentW, height: barH, color: hexColor(colors.barBg) });
     const fillW = Math.max(0, Math.min(1, pct / 100)) * r.contentW;
     if (fillW > 0) {
-      r.rect({ x: r.marginX, y: r.y - barH + 2, width: fillW, height: barH, color: barColorFor(barClass) });
+      r.rect({ x: r.marginX, y: r.y - barH + 2, width: fillW, height: barH, color: barColorFor(colors, barClass) });
     }
     r.y -= 22;
 
     if (!entries.length) {
-      r.text('No vacations recorded.', { size: 9, color: hexColor(PDF_COLORS.muted) });
+      r.text('No vacations recorded.', { size: 9, color: mutedColor });
       r.y -= 20;
       continue;
     }
 
     for (const entry of entries) {
-      r.ensureSpace(16);
-      const inputDays = Number(entry.vac.days) || 0;
-      const daysLabel = inputDays === 1 ? '1 day' : `${inputDays} days`;
-      const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
-      const crossStr = crossBudgets.length
-        ? `  (${crossBudgets.reduce((s, b) => s + b.days, 0)} from ${crossBudgets[0].budgetYear})`
-        : '';
+      const newPage = r.ensureSpace(16);
+      if (newPage) {
+        r.text(`${yearNum} (continued)`, { size: 9.5, font: r.bold, color: mutedColor });
+        r.y -= 16;
+      }
+
+      const daysLabel = formatDaysLabel(entry.vac.days);
+      const cross = crossBudgetSummary(entry, yearNum);
+      const crossStr = cross ? `  (${cross.days} from ${cross.year})` : '';
       const dateStr = `${fmtDate(entry.vac.start)} – ${fmtDate(entry.vac.end)}`;
       r.text(dateStr, { x: r.marginX + 12, size: 9 });
       const rightStr = `${crossStr}   ${daysLabel}`.trim();
       const rightW = r.font.widthOfTextAtSize(rightStr, 9);
-      r.text(rightStr, { x: r.marginX + r.contentW - rightW, size: 9, color: hexColor(PDF_COLORS.muted) });
+      r.text(rightStr, { x: r.marginX + r.contentW - rightW, size: 9, color: mutedColor });
       r.y -= 15;
     }
     r.y -= 12;
@@ -141,24 +165,27 @@ function drawResults(r, yearsMap, vacView) {
 
 async function exportPdf() {
   const { PDFDocument, StandardFonts } = PDFLib;
+  const colors = readThemeColors();
 
   const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const [font, bold] = await Promise.all([
+    pdfDoc.embedFont(StandardFonts.Helvetica),
+    pdfDoc.embedFont(StandardFonts.HelveticaBold),
+  ]);
 
-  const r = new PdfReport(pdfDoc, font, bold);
+  const r = new PdfReport(pdfDoc, font, bold, hexColor(colors.text));
 
   r.text('Godisnji', { size: 20, font: bold });
   r.y -= 18;
   const today = new Date();
   const pad = n => String(n).padStart(2, '0');
   r.text(`Vacation Days Tracker — exported ${pad(today.getDate())}.${pad(today.getMonth() + 1)}.${today.getFullYear()}`,
-    { size: 9.5, color: hexColor(PDF_COLORS.muted) });
+    { size: 9.5, color: hexColor(colors.muted) });
   r.y -= 24;
 
   const yearsMap = calculate();
   const vacView = buildVacView(yearsMap);
-  drawResults(r, yearsMap, vacView);
+  drawResults(r, yearsMap, vacView, colors);
 
   const jsonBytes = new TextEncoder().encode(JSON.stringify(state));
   await pdfDoc.attach(jsonBytes, PDF_ATTACHMENT_NAME, {
@@ -185,29 +212,49 @@ function downloadBytes(bytes, filename, mime) {
 
 // ── Import ───────────────────────────────────────────────────────────────────
 
+// Recursively collects every leaf `/Names` array out of a PDF name tree node,
+// which is either a leaf (`/Names`) or an intermediate node (`/Kids`, each
+// itself a name tree node) per the PDF spec's name tree structure.
+function collectNameTreeLeaves(namesTreeDict, out) {
+  const { PDFName, PDFDict, PDFArray } = PDFLib;
+  const kids = namesTreeDict.lookupMaybe(PDFName.of('Kids'), PDFArray);
+  if (kids) {
+    for (let i = 0; i < kids.size(); i++) {
+      collectNameTreeLeaves(kids.lookup(i, PDFDict), out);
+    }
+    return;
+  }
+  const namesArr = namesTreeDict.lookupMaybe(PDFName.of('Names'), PDFArray);
+  if (namesArr) out.push(namesArr);
+}
+
 // Walks the PDF's Names/EmbeddedFiles tree to pull out the raw bytes of the
 // attachment we embedded on export. pdf-lib (1.17.x) can only *write*
 // attachments via the high-level API, not read them back, so this reads the
 // low-level object graph directly.
 async function extractEmbeddedJson(pdfDoc) {
-  const { PDFName, PDFDict, PDFArray, decodePDFRawStream } = PDFLib;
+  const { PDFName, PDFDict, decodePDFRawStream } = PDFLib;
 
   const namesDict = pdfDoc.catalog.lookupMaybe(PDFName.of('Names'), PDFDict);
   const embeddedFilesDict = namesDict && namesDict.lookupMaybe(PDFName.of('EmbeddedFiles'), PDFDict);
-  const efNames = embeddedFilesDict && embeddedFilesDict.lookupMaybe(PDFName.of('Names'), PDFArray);
-  if (!efNames) return null;
+  if (!embeddedFilesDict) return null;
 
-  for (let i = 0; i < efNames.size(); i += 2) {
-    const nameObj = efNames.lookup(i);
-    const name = typeof nameObj.decodeText === 'function' ? nameObj.decodeText() : String(nameObj);
-    if (name !== PDF_ATTACHMENT_NAME) continue;
+  const nameArrays = [];
+  collectNameTreeLeaves(embeddedFilesDict, nameArrays);
 
-    const fileSpec = efNames.lookup(i + 1, PDFDict);
-    const efDict = fileSpec.lookup(PDFName.of('EF'), PDFDict);
-    const fileRef = efDict.get(PDFName.of('F'));
-    const stream = pdfDoc.context.lookup(fileRef);
-    const bytes = decodePDFRawStream(stream).decode();
-    return new TextDecoder('utf-8').decode(bytes);
+  for (const efNames of nameArrays) {
+    for (let i = 0; i < efNames.size(); i += 2) {
+      const nameObj = efNames.lookup(i);
+      const name = typeof nameObj.decodeText === 'function' ? nameObj.decodeText() : String(nameObj);
+      if (name !== PDF_ATTACHMENT_NAME) continue;
+
+      const fileSpec = efNames.lookup(i + 1, PDFDict);
+      const efDict = fileSpec.lookup(PDFName.of('EF'), PDFDict);
+      const fileRef = efDict.get(PDFName.of('F'));
+      const stream = pdfDoc.context.lookup(fileRef);
+      const bytes = decodePDFRawStream(stream).decode();
+      return new TextDecoder('utf-8').decode(bytes);
+    }
   }
   return null;
 }

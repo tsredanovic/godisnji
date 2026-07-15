@@ -347,21 +347,29 @@ function buildYearCard(yr, yearNum, vacEntries) {
   return card;
 }
 
+// Shared by the web UI log and the PDF export so the two never drift apart.
+function formatDaysLabel(days) {
+  const n = Number(days) || 0;
+  return n === 1 ? '1 day' : `${n} days`;
+}
+
+// entry: { vac, fromBudgets }; yearNum: the card's own year.
+// Returns { days, year } describing days charged to a *different* year's
+// budget, or null if this entry didn't cross budgets.
+function crossBudgetSummary(entry, yearNum) {
+  const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
+  if (!crossBudgets.length) return null;
+  return { days: crossBudgets.reduce((s, b) => s + b.days, 0), year: crossBudgets[0].budgetYear };
+}
+
 // entries: pre-sorted array from buildYearCard (oldest first within the year card)
 function buildLogHtml(entries, yearNum) {
   if (!entries.length) return '<p class="no-logs">No vacations recorded.</p>';
 
   const items = entries.map(entry => {
-    const inputDays  = Number(entry.vac.days) || 0;
-    const daysLabel  = inputDays === 1 ? '1 day' : `${inputDays} days`;
-    const crossBudgets = entry.fromBudgets.filter(b => b.budgetYear !== yearNum);
-
-    let tag = '';
-    if (crossBudgets.length > 0) {
-      const crossDays = crossBudgets.reduce((s, b) => s + b.days, 0);
-      const crossYear = crossBudgets[0].budgetYear;
-      tag = `<span class="cross-tag">${crossDays} from ${crossYear}</span>`;
-    }
+    const daysLabel = formatDaysLabel(entry.vac.days);
+    const cross = crossBudgetSummary(entry, yearNum);
+    const tag = cross ? `<span class="cross-tag">${cross.days} from ${cross.year}</span>` : '';
 
     return `<li>
       <span class="log-date">${fmtDate(entry.vac.start)}&ndash;${fmtDate(entry.vac.end)}</span>
