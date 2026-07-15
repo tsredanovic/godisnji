@@ -542,6 +542,26 @@ function init() {
     if (file) importPdfFile(file);
   });
 
+  // Mobile header menu: collapses Export/Import/Reset into a dropdown.
+  const headerMenuBtn = document.getElementById('header-menu-btn');
+  const headerButtons = document.getElementById('header-buttons');
+  const closeHeaderMenu = () => {
+    headerButtons.classList.remove('open');
+    headerMenuBtn.setAttribute('aria-expanded', 'false');
+  };
+  headerMenuBtn.addEventListener('click', () => {
+    const isOpen = headerButtons.classList.toggle('open');
+    headerMenuBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+  headerButtons.addEventListener('click', e => {
+    if (e.target.tagName === 'BUTTON') closeHeaderMenu();
+  });
+  document.addEventListener('click', e => {
+    if (!headerButtons.classList.contains('open')) return;
+    if (headerButtons.contains(e.target) || headerMenuBtn.contains(e.target)) return;
+    closeHeaderMenu();
+  });
+
   render();
 }
 
