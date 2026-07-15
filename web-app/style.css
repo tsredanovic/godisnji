@@ -49,8 +49,19 @@ header {
 
 .header-brand {
   display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-text {
+  display: flex;
   align-items: baseline;
   gap: 12px;
+}
+
+.header-logo {
+  height: 4rem;
+  width: auto;
 }
 
 .header-buttons {
