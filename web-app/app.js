@@ -522,6 +522,7 @@ function resetToDefaults() {
   state = {
     years:     DEFAULT_YEARS.map(y => ({ ...y })),
     vacations: DEFAULT_VACATIONS.map(v => ({ ...v })),
+    profile:   state.profile,
   };
   saveState();
   render();
