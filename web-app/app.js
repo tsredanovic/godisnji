@@ -487,7 +487,7 @@ function addVacation() {
 }
 
 function resetToDefaults() {
-  if (!confirm('Reset all data to defaults from vacation.txt? This cannot be undone.')) return;
+  if (!confirm('This will replace your data with example values and cannot be undone. Consider exporting your data first if you’d like to keep it. Reset anyway?')) return;
   state = {
     years:     DEFAULT_YEARS.map(y => ({ ...y })),
     vacations: DEFAULT_VACATIONS.map(v => ({ ...v })),
