@@ -179,7 +179,10 @@ async function exportPdf() {
   r.y -= 18;
   const today = new Date();
   const pad = n => String(n).padStart(2, '0');
-  r.text(`Vacation Days Tracker — exported ${pad(today.getDate())}.${pad(today.getMonth() + 1)}.${today.getFullYear()}`,
+  const dateStr = `${pad(today.getDate())}.${pad(today.getMonth() + 1)}.${today.getFullYear()}`;
+  const { name, employer } = state.profile || {};
+  const whoStr = name ? ` - ${name}${employer ? ` at ${employer}` : ''}` : '';
+  r.text(`Vacation Days${whoStr} - on ${dateStr}`,
     { size: 9.5, color: hexColor(colors.muted) });
   r.y -= 24;
 
