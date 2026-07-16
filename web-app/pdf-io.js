@@ -39,6 +39,19 @@ function barColorFor(colors, barClass) {
   return hexColor(hex);
 }
 
+// The embedded StandardFonts only support WinAnsi encoding, which drops
+// characters like Croatian ć/č/š/ž/đ — fold those to plain ASCII (and replace
+// anything else WinAnsi can't encode) so drawText() never throws on
+// user-entered text (e.g. profile name/employer).
+function foldToWinAnsi(str) {
+  if (!str) return str;
+  return str
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[đĐ]/g, ch => (ch === 'đ' ? 'd' : 'D'))
+    .replace(/[^\x00-\xFF]/g, '?');
+}
+
 // ── Page/layout helper ───────────────────────────────────────────────────────
 
 class PdfReport {
@@ -79,7 +92,7 @@ class PdfReport {
   }
 
   text(str, { x, y, size = 9.5, font, color } = {}) {
-    this.page.drawText(str, {
+    this.page.drawText(foldToWinAnsi(str), {
       x: x ?? this.marginX,
       y: y ?? this.y,
       size,
