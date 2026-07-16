@@ -163,14 +163,22 @@ function drawResults(r, yearsMap, vacView, colors) {
 
 // ── Export ───────────────────────────────────────────────────────────────────
 
+function base64ToBytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 async function exportPdf() {
-  const { PDFDocument, StandardFonts } = PDFLib;
+  const { PDFDocument } = PDFLib;
   const colors = readThemeColors();
 
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
   const [font, bold] = await Promise.all([
-    pdfDoc.embedFont(StandardFonts.Helvetica),
-    pdfDoc.embedFont(StandardFonts.HelveticaBold),
+    pdfDoc.embedFont(base64ToBytes(PDF_FONT_REGULAR_BASE64), { subset: true }),
+    pdfDoc.embedFont(base64ToBytes(PDF_FONT_BOLD_BASE64), { subset: true }),
   ]);
 
   const r = new PdfReport(pdfDoc, font, bold, hexColor(colors.text));
