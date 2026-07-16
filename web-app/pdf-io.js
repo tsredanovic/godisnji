@@ -182,7 +182,7 @@ async function exportPdf() {
   const dateStr = `${pad(today.getDate())}.${pad(today.getMonth() + 1)}.${today.getFullYear()}`;
   const { name, employer } = state.profile || {};
   const whoStr = name ? ` - ${name}${employer ? ` at ${employer}` : ''}` : '';
-  r.text(`Vacation Days${whoStr} - exported ${dateStr}`,
+  r.text(`Vacation Days${whoStr} - on ${dateStr}`,
     { size: 9.5, color: hexColor(colors.muted) });
   r.y -= 24;
 
