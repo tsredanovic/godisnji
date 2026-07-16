@@ -70,6 +70,13 @@ header {
   gap: 8px;
 }
 
+.header-menu-btn {
+  display: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 6px 10px;
+}
+
 header h1 {
   font-size: 1.35rem;
   font-weight: 700;
@@ -504,5 +511,38 @@ details[open] .toggle-icon {
 
   .config-panel {
     overflow-y: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-buttons {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 24px;
+    margin-top: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    z-index: 20;
+  }
+
+  .header-buttons.open {
+    display: flex;
+  }
+
+  .header-buttons .btn-ghost {
+    text-align: left;
   }
 }
