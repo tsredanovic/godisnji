@@ -22,7 +22,7 @@ const DEFAULT_VACATIONS = [
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-let state = { years: [], vacations: [] };
+let state = { years: [], vacations: [], profile: { name: '', employer: '' } };
 
 let _idSeq = 0;
 function uid() {
@@ -44,12 +44,16 @@ function loadState() {
         throw new Error('bad shape');
       }
       state = parsed;
+      if (!state.profile || typeof state.profile !== 'object') {
+        state.profile = { name: '', employer: '' };
+      }
       return;
     }
   } catch (_) {}
   state = {
     years: DEFAULT_YEARS.map(y => ({ ...y })),
     vacations: DEFAULT_VACATIONS.map(v => ({ ...v })),
+    profile: { name: '', employer: '' },
   };
 }
 
@@ -380,12 +384,39 @@ function buildLogHtml(entries, yearNum) {
   return `<ul class="vac-log">${items}</ul>`;
 }
 
+// ── Render: Profile ──────────────────────────────────────────────────────────
+
+const PROFILE_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"></path></svg>`;
+
+function getInitials(name) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '';
+  const first = parts[0][0];
+  const last  = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
+function renderProfile() {
+  const avatar = document.getElementById('profile-avatar');
+  const initials = getInitials(state.profile.name);
+  if (initials) {
+    avatar.textContent = initials;
+    avatar.classList.add('has-initials');
+  } else {
+    avatar.innerHTML = PROFILE_ICON_SVG;
+    avatar.classList.remove('has-initials');
+  }
+  document.getElementById('profile-name-input').value = state.profile.name || '';
+  document.getElementById('profile-employer-input').value = state.profile.employer || '';
+}
+
 // ── Full render ──────────────────────────────────────────────────────────────
 
 function render() {
   renderYears();
   renderVacations();
   renderResults();
+  renderProfile();
 }
 
 // ── Event handlers ───────────────────────────────────────────────────────────
@@ -560,6 +591,41 @@ function init() {
     if (!headerButtons.classList.contains('open')) return;
     if (headerButtons.contains(e.target) || headerMenuBtn.contains(e.target)) return;
     closeHeaderMenu();
+  });
+
+  // Profile dropdown
+  const profileBtn = document.getElementById('profile-btn');
+  const profileDropdown = document.getElementById('profile-dropdown');
+  const closeProfileMenu = () => {
+    profileDropdown.classList.remove('open');
+    profileBtn.setAttribute('aria-expanded', 'false');
+  };
+  profileBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = profileDropdown.classList.toggle('open');
+    profileBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+  document.addEventListener('click', e => {
+    if (!profileDropdown.classList.contains('open')) return;
+    if (profileDropdown.contains(e.target) || profileBtn.contains(e.target)) return;
+    closeProfileMenu();
+  });
+  document.getElementById('profile-name-input').addEventListener('input', e => {
+    state.profile.name = e.target.value;
+    saveState();
+    const avatar = document.getElementById('profile-avatar');
+    const initials = getInitials(state.profile.name);
+    if (initials) {
+      avatar.textContent = initials;
+      avatar.classList.add('has-initials');
+    } else {
+      avatar.innerHTML = PROFILE_ICON_SVG;
+      avatar.classList.remove('has-initials');
+    }
+  });
+  document.getElementById('profile-employer-input').addEventListener('input', e => {
+    state.profile.employer = e.target.value;
+    saveState();
   });
 
   render();
