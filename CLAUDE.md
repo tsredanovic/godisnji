@@ -8,15 +8,17 @@ Godisnji is a client-side-only vacation days tracker (`web-app/`): plain HTML/CS
 
 ## Commands
 
-There is no build, lint, or test tooling in this repo (by design — see the "no bundler" positioning in README.md).
+There is no build or lint tooling in this repo (by design — see the "no bundler" positioning in README.md).
 
 - **Run locally**: open `web-app/index.html` directly in a browser, or serve the `web-app/` directory with any static file server (e.g. `python3 -m http.server`).
-- **Verify changes**: there is no test suite or CI. Changes must be verified manually by exercising the app in a browser (add a year/vacation, check the Results panel, and check PDF export/import if those code paths were touched).
+- **Run tests**: `node --test` (run from the repo root — Node's default recursive discovery finds `test/app.test.js`). Uses Node's built-in test runner (`node:test`/`node:assert`), zero dependencies, no package.json. Covers only the pure logic in `web-app/calc.js` (date/cutoff helpers, `calculate()`/`chargeDays()` carryover math). Kept outside `web-app/` since that directory is what actually gets deployed.
+- **Verify DOM/render/PDF changes**: those aren't covered by the test suite. Verify manually by exercising the app in a browser (add a year/vacation, check the Results panel, and check PDF export/import if those code paths were touched).
 
 ## Architecture
 
-- **No modules/bundler** — every script runs in global scope. Load order in `index.html` matters: `vendor/pdf-lib.min.js` → `vendor/fontkit.umd.min.js` → `vendor/pdf-fonts.js` → `pdf-io.js` → `app.js`.
-- **`app.js`** owns a single global `state` object (`{ years, vacations, profile }`), persisted to `localStorage` via `saveState()`/`loadState()`. `calculate()` computes each year's vacation usage, including cross-year carryover: `chargeDays()` charges a vacation against the previous year's leftover budget first if the vacation falls before that year's carryover cutoff date, then charges the remainder to its own year. Rendering is a manual, non-reactive pipeline — `render()` calls `renderYears()`/`renderVacations()`/`renderResults()` — re-triggered explicitly from input/click handlers (`onYearInput`, `onVacationInput`, `onYearsClick`, `onVacationsClick`).
+- **No modules/bundler** — every script runs in global scope. Load order in `index.html` matters: `vendor/pdf-lib.min.js` → `vendor/fontkit.umd.min.js` → `vendor/pdf-fonts.js` → `calc.js` → `pdf-io.js` → `app.js`.
+- **`calc.js`** holds the pure, DOM-free logic: date/cutoff helpers and `calculate(state)`/`chargeDays()`. `calculate(state)` computes each year's vacation usage from a plain `{ years, vacations }` state object, including cross-year carryover: `chargeDays()` charges a vacation against the previous year's leftover budget first if the vacation falls before that year's carryover cutoff date, then charges the remainder to its own year. It's a plain global script in the browser and also `module.exports`-guarded so `test/app.test.js` can `require()` it directly under Node.
+- **`app.js`** owns a single global `state` object (`{ years, vacations, profile }`), persisted to `localStorage` via `saveState()`/`loadState()`, and calls `calculate(state)` from `calc.js`. Rendering is a manual, non-reactive pipeline — `render()` calls `renderYears()`/`renderVacations()`/`renderResults()` — re-triggered explicitly from input/click handlers (`onYearInput`, `onVacationInput`, `onYearsClick`, `onVacationsClick`).
 - **`pdf-io.js`** handles PDF export/import on top of the vendored `pdf-lib`/`fontkit`. `exportPdf()` draws a report mirroring the Results view using `PdfReport`, a small hand-rolled layout helper around pdf-lib's low-level drawing API (manual page-break/positioning logic, not a templating layer), and embeds the full `state` as a hidden JSON file attachment inside the generated PDF. `importPdfFile()` reverses this (`extractEmbeddedJson`/`collectNameTreeLeaves`) to pull that attachment back out and restore `state`.
 
 ## Conventions
