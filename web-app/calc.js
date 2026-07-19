@@ -71,7 +71,9 @@ function calculate(state) {
   for (const y of state.years) {
     const num  = Number(y.year);
     const days = Number(y.allowedDays);
-    if (!num || !days) continue;
+    // `days` can be legitimately 0 (a year with no entitlement) — only skip
+    // when allowedDays is missing/non-numeric, not merely falsy.
+    if (!num || y.allowedDays == null || isNaN(days) || days < 0) continue;
     map[num] = {
       yearNum:     num,
       allowedDays: days,
@@ -144,7 +146,7 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== 'undefined') {
   module.exports = {
     calculate, chargeDays, countWeekdays, parseLocalDate, fmtDate,
     parseCutoff, fmtCutoff, sameYear, escapeHtml,
