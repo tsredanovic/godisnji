@@ -225,7 +225,7 @@ async function exportPdf() {
     { size: 9.5, color: hexColor(colors.muted) });
   r.y -= 24;
 
-  const yearsMap = calculate();
+  const yearsMap = calculate(state);
   const vacView = buildVacView(yearsMap);
   drawResults(r, yearsMap, vacView, colors);
 
