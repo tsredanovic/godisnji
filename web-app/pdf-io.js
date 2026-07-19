@@ -91,6 +91,24 @@ class PdfReport {
   rect({ x, y, width, height, color }) {
     this.page.drawRectangle({ x, y, width, height, color });
   }
+
+  // Adds an invisible clickable link annotation over a rectangular region.
+  link({ x, y, width, height, url }) {
+    const { context } = this.pdfDoc;
+    const annot = context.register(
+      context.obj({
+        Type: 'Annot',
+        Subtype: 'Link',
+        Rect: [x, y, x + width, y + height],
+        Border: [0, 0, 0],
+        A: { Type: 'Action', S: 'URI', URI: PDFLib.PDFString.of(url) },
+      })
+    );
+    const existing = this.page.node.Annots();
+    const annots = existing ? existing.clone(context) : PDFLib.PDFArray.withContext(context);
+    annots.push(annot);
+    this.page.node.set(PDFLib.PDFName.of('Annots'), annots);
+  }
 }
 
 // ── Results section (mirrors buildYearCard) ─────────────────────────────────
@@ -183,7 +201,20 @@ async function exportPdf() {
 
   const r = new PdfReport(pdfDoc, font, bold, hexColor(colors.text));
 
-  r.text('Godisnji', { size: 20, font: bold });
+  const titleSize = 20;
+  const domain = window.location.host;
+  const titleStr = domain ? `Godisnji - ${domain}` : 'Godisnji';
+  r.text(titleStr, { size: titleSize, font: bold });
+  if (domain) {
+    const prefix = `Godisnji - `;
+    const prefixW = bold.widthOfTextAtSize(prefix, titleSize);
+    const domainW = bold.widthOfTextAtSize(domain, titleSize);
+    r.link({
+      x: r.marginX + prefixW, y: r.y - 4,
+      width: domainW, height: titleSize,
+      url: `https://${domain}`,
+    });
+  }
   r.y -= 18;
   const today = new Date();
   const pad = n => String(n).padStart(2, '0');
