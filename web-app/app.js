@@ -172,12 +172,29 @@ function calculate() {
 // when a 2022 vacation charges against 2021's budget).
 function chargeDays(yearObj, vac, days, vacYear) {
   const remaining = yearObj.allowedDays - yearObj.usedDays;
-  const added = Math.min(days, remaining);
-  if (added > 0) {
-    yearObj.usedDays += added;
-    yearObj.logs.push({ vac, added, vacYear });
-  }
+  const added = Math.max(0, Math.min(days, remaining));
+  yearObj.usedDays += added;
+  // Always log the vacation, even when it adds 0 days (budget already
+  // exhausted) — computeYearStats() sums vac.days from these log entries, so
+  // dropping the log here would make the vacation vanish entirely from the
+  // year's displayed total and log instead of showing it as over budget.
+  yearObj.logs.push({ vac, added, vacYear });
   return added;
+}
+
+// ── HTML escaping ────────────────────────────────────────────────────────────
+
+// State can come from an imported PDF/JSON file, so any state-derived value
+// must be escaped before it lands in an innerHTML template (attribute or text
+// position) — otherwise a crafted import can break out of an attribute and
+// inject arbitrary markup/script.
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ── Render helpers ───────────────────────────────────────────────────────────
@@ -200,13 +217,13 @@ function renderYears() {
     const tr = document.createElement('tr');
     tr.dataset.id = y.id;
     tr.innerHTML = `
-      <td><input type="number" class="inp-year" value="${y.year ?? ''}" placeholder="2024"
-            min="2000" max="2099" data-id="${y.id}" data-field="year"></td>
-      <td><input type="number" class="inp-days" value="${y.allowedDays ?? ''}" placeholder="25"
-            min="1" max="365" data-id="${y.id}" data-field="allowedDays"></td>
-      <td><input type="text" class="inp-cutoff" value="${fmtCutoff(y.cutoffDay, y.cutoffMonth)}"
-            placeholder="31.12" maxlength="5" data-id="${y.id}" data-field="cutoff"></td>
-      <td><button class="btn-remove" data-id="${y.id}" title="Remove year">×</button></td>
+      <td><input type="number" class="inp-year" value="${escapeHtml(y.year ?? '')}" placeholder="2024"
+            min="2000" max="2099" data-id="${escapeHtml(y.id)}" data-field="year"></td>
+      <td><input type="number" class="inp-days" value="${escapeHtml(y.allowedDays ?? '')}" placeholder="25"
+            min="1" max="365" data-id="${escapeHtml(y.id)}" data-field="allowedDays"></td>
+      <td><input type="text" class="inp-cutoff" value="${escapeHtml(fmtCutoff(y.cutoffDay, y.cutoffMonth))}"
+            placeholder="31.12" maxlength="5" data-id="${escapeHtml(y.id)}" data-field="cutoff"></td>
+      <td><button class="btn-remove" data-id="${escapeHtml(y.id)}" title="Remove year">×</button></td>
     `;
     tbody.appendChild(tr);
   }
@@ -228,10 +245,10 @@ function renderVacations() {
     if (invalid) tr.classList.add('row-error');
     tr.dataset.id = v.id;
     tr.innerHTML = `
-      <td><input type="date" value="${v.start || ''}" data-id="${v.id}" data-field="start"></td>
-      <td><input type="date" value="${v.end   || ''}" data-id="${v.id}" data-field="end"></td>
+      <td><input type="date" value="${escapeHtml(v.start || '')}" data-id="${escapeHtml(v.id)}" data-field="start"></td>
+      <td><input type="date" value="${escapeHtml(v.end   || '')}" data-id="${escapeHtml(v.id)}" data-field="end"></td>
       <td>${buildDaysCell(v.id, v.days, invalid)}</td>
-      <td><button class="btn-remove" data-id="${v.id}" title="Remove vacation">×</button></td>
+      <td><button class="btn-remove" data-id="${escapeHtml(v.id)}" title="Remove vacation">×</button></td>
     `;
     tbody.appendChild(tr);
   }
@@ -242,8 +259,8 @@ function buildDaysCell(id, days, invalid) {
     ? `<span class="err-badge" title="Start and end must be in the same year">!</span>`
     : '';
   return `<div class="days-cell">
-    <input type="number" class="inp-vdays" value="${days ?? ''}"
-      min="0" max="365" data-id="${id}" data-field="days">
+    <input type="number" class="inp-vdays" value="${escapeHtml(days ?? '')}"
+      min="0" max="365" data-id="${escapeHtml(id)}" data-field="days">
     ${badge}
   </div>`;
 }
@@ -376,7 +393,7 @@ function buildLogHtml(entries, yearNum) {
     const tag = cross ? `<span class="cross-tag">${cross.days} from ${cross.year}</span>` : '';
 
     return `<li>
-      <span class="log-date">${fmtDate(entry.vac.start)}&ndash;${fmtDate(entry.vac.end)}</span>
+      <span class="log-date">${escapeHtml(fmtDate(entry.vac.start))}&ndash;${escapeHtml(fmtDate(entry.vac.end))}</span>
       <span class="log-right">${tag}<span class="log-days">${daysLabel}</span></span>
     </li>`;
   }).join('');
