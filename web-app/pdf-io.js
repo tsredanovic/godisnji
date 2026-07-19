@@ -226,12 +226,18 @@ function downloadBytes(bytes, filename, mime) {
 // Recursively collects every leaf `/Names` array out of a PDF name tree node,
 // which is either a leaf (`/Names`) or an intermediate node (`/Kids`, each
 // itself a name tree node) per the PDF spec's name tree structure.
-function collectNameTreeLeaves(namesTreeDict, out) {
+// `seen`/`depth` guard against a maliciously crafted PDF whose `/Kids` tree
+// cycles back on itself or nests unreasonably deep, which would otherwise
+// hang or crash the tab on import.
+function collectNameTreeLeaves(namesTreeDict, out, seen = new Set(), depth = 0) {
+  if (depth > 50 || seen.has(namesTreeDict)) return;
+  seen.add(namesTreeDict);
+
   const { PDFName, PDFDict, PDFArray } = PDFLib;
   const kids = namesTreeDict.lookupMaybe(PDFName.of('Kids'), PDFArray);
   if (kids) {
     for (let i = 0; i < kids.size(); i++) {
-      collectNameTreeLeaves(kids.lookup(i, PDFDict), out);
+      collectNameTreeLeaves(kids.lookup(i, PDFDict), out, seen, depth + 1);
     }
     return;
   }
