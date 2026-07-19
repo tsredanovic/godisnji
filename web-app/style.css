@@ -171,6 +171,25 @@ main {
   align-items: start;
 }
 
+/* ── Footer ── */
+.site-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.site-footer a {
+  color: inherit;
+}
+
+.footer-sep {
+  opacity: 0.6;
+}
+
 /* ── Config panel ── */
 .config-panel {
   display: flex;
