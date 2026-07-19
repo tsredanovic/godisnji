@@ -1,17 +1,13 @@
-<div align="center">
-  <img src="web-app/assets/favicon.svg" width="88" height="88" alt="Godisnji icon">
+# Godisnji
 
-  # Godisnji
+**A vacation days tracker that runs entirely in your browser.**
 
-  **A vacation days tracker that runs entirely in your browser.**
+No install, no account, no server — open a file and go.
 
-  No install, no account, no server — open a file and go.
-
-  [![Version](https://img.shields.io/github/v/tag/tsredanovic/godisnji?label=version&sort=semver)](https://github.com/tsredanovic/godisnji/tags)
-  [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-  [![Dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen)](#tech-stack)
-  [![Build: not required](https://img.shields.io/badge/build-not%20required-lightgrey)](#getting-started)
-</div>
+[![Version](https://img.shields.io/github/v/tag/tsredanovic/godisnji?label=version&sort=semver)](https://github.com/tsredanovic/godisnji/tags)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen)](#tech-stack)
+[![Build: not required](https://img.shields.io/badge/build-not%20required-lightgrey)](#getting-started)
 
 ---
 
@@ -42,17 +38,6 @@
 - **Reset to defaults** — restore example data any time (with a confirmation prompt), without losing your profile.
 - **Responsive UI** — a collapsible header menu keeps things usable on mobile.
 
-## Getting started
-
-There's nothing to install and nothing to build.
-
-```bash
-git clone https://github.com/tsredanovic/godisnji.git
-open godisnji/web-app/index.html
-```
-
-Or simply download `web-app/index.html` (with its sibling files) and double-click it. Any modern browser works.
-
 ## How carryover works
 
 Each year has an **allowed days** budget and an optional **carryover cutoff** (e.g. `30.06`). When you log a vacation:
@@ -70,6 +55,17 @@ This mirrors how a lot of workplaces handle "carry over N days into Q1" policies
 ## Data & privacy
 
 All data lives in your browser's `localStorage` — nothing is ever sent to a server. There's no account, no analytics, no tracking scripts, and no cookies. Clearing your browser data (or using a different browser/device) starts you fresh, which is exactly what PDF export is for.
+
+## Getting started
+
+There's nothing to install and nothing to build.
+
+```bash
+git clone https://github.com/tsredanovic/godisnji.git
+open godisnji/web-app/index.html
+```
+
+Or simply download `web-app/index.html` (with its sibling files) and double-click it. Any modern browser works.
 
 ## Tech stack
 
