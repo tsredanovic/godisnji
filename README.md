@@ -16,10 +16,10 @@ No install, no account, no server — open a file and go.
 ## Contents
 
 - [Features](#features)
-- [Getting started](#getting-started)
 - [How carryover works](#how-carryover-works)
 - [Exporting & importing](#exporting--importing)
 - [Data & privacy](#data--privacy)
+- [Getting started](#getting-started)
 - [Tech stack](#tech-stack)
 - [Project structure](#project-structure)
 - [License](#license)
@@ -80,11 +80,15 @@ Plain HTML, CSS, and JavaScript — no framework, no bundler, no package manager
 web-app/
 ├── index.html        # markup/layout
 ├── style.css         # all styling
-├── app.js            # state, calculations, rendering, event handling
+├── calc.js           # pure date/carryover calculation logic (no DOM)
+├── app.js            # state, rendering, event handling
 ├── pdf-io.js         # PDF export/import
 ├── assets/
 │   └── favicon.svg   # app icon
 └── vendor/           # third-party libs used only for PDF export/import
+
+test/
+└── app.test.js       # tests for calc.js, run with `node --test`
 ```
 
 ## License
