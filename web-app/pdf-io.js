@@ -94,20 +94,48 @@ class PdfReport {
 
   // Adds an invisible clickable link annotation over a rectangular region.
   link({ x, y, width, height, url }) {
-    const { context } = this.pdfDoc;
-    const annot = context.register(
-      context.obj({
-        Type: 'Annot',
-        Subtype: 'Link',
-        Rect: [x, y, x + width, y + height],
-        Border: [0, 0, 0],
-        A: { Type: 'Action', S: 'URI', URI: PDFLib.PDFString.of(url) },
-      })
-    );
-    const existing = this.page.node.Annots();
-    const annots = existing ? existing.clone(context) : PDFLib.PDFArray.withContext(context);
-    annots.push(annot);
-    this.page.node.set(PDFLib.PDFName.of('Annots'), annots);
+    addLinkAnnotation(this.pdfDoc, this.page, { x, y, width, height, url });
+  }
+}
+
+// Adds an invisible clickable link annotation over a rectangular region of
+// `page`. Standalone (rather than PdfReport.link, which only knows about the
+// "current" page) so the footer pass can add link annotations to every page
+// after the fact.
+function addLinkAnnotation(pdfDoc, page, { x, y, width, height, url }) {
+  const { context } = pdfDoc;
+  const annot = context.register(
+    context.obj({
+      Type: 'Annot',
+      Subtype: 'Link',
+      Rect: [x, y, x + width, y + height],
+      Border: [0, 0, 0],
+      A: { Type: 'Action', S: 'URI', URI: PDFLib.PDFString.of(url) },
+    })
+  );
+  const existing = page.node.Annots();
+  const annots = existing ? existing.clone(context) : PDFLib.PDFArray.withContext(context);
+  annots.push(annot);
+  page.node.set(PDFLib.PDFName.of('Annots'), annots);
+}
+
+// Draws "Powered by godisnji.com" (bottom-left, clickable) and the export
+// date (bottom-right) on every page, since pages can be added dynamically
+// while drawing the results section.
+function drawFooters(pdfDoc, font, mutedColor, dateStr, pageW, marginX) {
+  const size = 8.5;
+  const y = 20;
+  const linkText = 'Powered by godisnji.com';
+  const linkW = font.widthOfTextAtSize(linkText, size);
+  const dateW = font.widthOfTextAtSize(dateStr, size);
+
+  for (const page of pdfDoc.getPages()) {
+    page.drawText(linkText, { x: marginX, y, size, font, color: mutedColor });
+    addLinkAnnotation(pdfDoc, page, {
+      x: marginX, y: y - 2, width: linkW, height: size + 3,
+      url: 'https://godisnji.com',
+    });
+    page.drawText(dateStr, { x: pageW - marginX - dateW, y, size, font, color: mutedColor });
   }
 }
 
@@ -202,32 +230,29 @@ async function exportPdf() {
   const r = new PdfReport(pdfDoc, font, bold, hexColor(colors.text));
 
   const titleSize = 20;
-  const domain = window.location.host;
-  const titleStr = domain ? `Godisnji - ${domain}` : 'Godisnji';
-  r.text(titleStr, { size: titleSize, font: bold });
-  if (domain) {
-    const prefix = `Godisnji - `;
-    const prefixW = bold.widthOfTextAtSize(prefix, titleSize);
-    const domainW = bold.widthOfTextAtSize(domain, titleSize);
-    r.link({
-      x: r.marginX + prefixW, y: r.y - 4,
-      width: domainW, height: titleSize,
-      url: `https://${domain}`,
-    });
-  }
+  const titleStr = 'Vacation days';
+  const titleW = bold.widthOfTextAtSize(titleStr, titleSize);
+  r.text(titleStr, { x: (r.pageW - titleW) / 2, size: titleSize, font: bold });
   r.y -= 18;
+
+  const { name, employer } = state.profile || {};
+  if (name) {
+    const subtitleStr = employer ? `${name} at ${employer}` : name;
+    const subtitleSize = 9.5;
+    const subtitleW = font.widthOfTextAtSize(subtitleStr, subtitleSize);
+    r.text(subtitleStr, { x: (r.pageW - subtitleW) / 2, size: subtitleSize, color: hexColor(colors.muted) });
+  }
+  r.y -= 24;
+
   const today = new Date();
   const pad = n => String(n).padStart(2, '0');
   const dateStr = `${pad(today.getDate())}.${pad(today.getMonth() + 1)}.${today.getFullYear()}`;
-  const { name, employer } = state.profile || {};
-  const whoStr = name ? ` - ${name}${employer ? ` at ${employer}` : ''}` : '';
-  r.text(`Vacation Days${whoStr} - on ${dateStr}`,
-    { size: 9.5, color: hexColor(colors.muted) });
-  r.y -= 24;
 
   const yearsMap = calculate(state);
   const vacView = buildVacView(yearsMap);
   drawResults(r, yearsMap, vacView, colors);
+
+  drawFooters(pdfDoc, font, hexColor(colors.muted), dateStr, r.pageW, r.marginX);
 
   const jsonBytes = new TextEncoder().encode(JSON.stringify(state));
   await pdfDoc.attach(jsonBytes, PDF_ATTACHMENT_NAME, {
