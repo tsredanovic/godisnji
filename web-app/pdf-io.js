@@ -123,7 +123,7 @@ function addLinkAnnotation(pdfDoc, page, { x, y, width, height, url }) {
 // date (bottom-right) on every page, since pages can be added dynamically
 // while drawing the results section.
 function drawFooters(pdfDoc, font, mutedColor, dateStr, pageW, marginX) {
-  const size = 8.5;
+  const size = 9;
   const y = 20;
   const linkText = 'Powered by godisnji.com';
   const linkW = font.widthOfTextAtSize(linkText, size);
@@ -229,20 +229,20 @@ async function exportPdf() {
 
   const r = new PdfReport(pdfDoc, font, bold, hexColor(colors.text));
 
-  const titleSize = 20;
+  const titleSize = 18;
   const titleStr = 'Vacation days';
   const titleW = bold.widthOfTextAtSize(titleStr, titleSize);
   r.text(titleStr, { x: (r.pageW - titleW) / 2, size: titleSize, font: bold });
-  r.y -= 18;
+  r.y -= 24;
 
   const { name, employer } = state.profile || {};
   if (name) {
     const subtitleStr = employer ? `${name} at ${employer}` : name;
-    const subtitleSize = 9.5;
+    const subtitleSize = 16;
     const subtitleW = font.widthOfTextAtSize(subtitleStr, subtitleSize);
-    r.text(subtitleStr, { x: (r.pageW - subtitleW) / 2, size: subtitleSize, color: hexColor(colors.muted) });
+    r.text(subtitleStr, { x: (r.pageW - subtitleW) / 2, size: subtitleSize });
   }
-  r.y -= 24;
+  r.y -= 30;
 
   const today = new Date();
   const pad = n => String(n).padStart(2, '0');
